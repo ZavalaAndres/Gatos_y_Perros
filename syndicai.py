@@ -1,17 +1,17 @@
-import os, cv2
 import numpy as np
+import json
 
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.models import load_model
+from keras.preprocessing import imgage
+from keras import models
 
-from utils import url_to_image, b64_to_image, image_to_base64
+
 
 from PIL import Image
 
 
 
 args = {
+    "image": "sample/cat.10.jpg",
     "perrosygatos":"clasificador",
     "model": "RedCNN_PerrosyGatos.h5"
 }
@@ -22,18 +22,20 @@ class PythonPredictor:
 
         # load our serialized face detector model from disk
         print("[INFO] cargando modelo entrenado...")
-        self.model = load_model(args["model"])
+        self.model = models.load_model(args["model"])
 
     def predict(self, payload):
         #Obtenemos la imagen del post
-        try:
-            image = Image.open(payload["image"].file)
-        except:
-            image = Image.open(payload["image"].file)
-        orig = image.copy()
-        (h, w) = image.shape[:2]
-
-        img_tensor = img_to_array(image)
+        img = Image.open(payload["image"].file)
+        img = img.resize((64,64))
+        img_tensor = np.array(img)
         img_tensor = np.expand.dims(img_tensor, axis=0)
-        img_tensor /= 255
-        return self.model.predict(img_tensor)[0][0]
+        img_tensor = img_tensor/255
+        resultado = self.model.predict(img_tensor)
+        resultado = np.round(resultado[0][0])
+        
+        valor = "Perro"
+        if resultado == 0:
+            valor = "Gato"
+        res = {"resultado": valor}      
+        return json.dumps(res)
